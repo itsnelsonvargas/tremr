@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Application data
+earthquake_monitor.log
+seen_earthquakes.json
+custom_mock_data.json
+earthquake_warning.png
+earthquake_warning.wav
+earthquake_beep.wav
+system_test.log
+system_test_report_*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code (AI Assistant)
+.claude/
+.claude*
+*claude_history*
+*claude_session*
+
+# Development/Testing
+rename_to_tremr.py
+complete_rename_tremr.py
+test_phivolcs_html.py
+gui_old.py
+
+# Distribution (generated)
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.temp
+*.lock
+.DS_Store
+Thumbs.db

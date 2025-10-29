@@ -1,0 +1,49 @@
+{
+    "earthquakes": [
+        {
+            "date": "2025-10-28",
+            "time": "14:30:45",
+            "latitude": "14.2500",
+            "longitude": "120.8500",
+            "depth": "025 kilometers",
+            "magnitude": "4.5",
+            "location": "005 km S 52° W of Nasugbu (Batangas)"
+        },
+        {
+            "date": "2025-10-28",
+            "time": "12:15:30",
+            "latitude": "14.6500",
+            "longitude": "121.0500",
+            "depth": "010 kilometers",
+            "magnitude": "3.2",
+            "location": "008 km N 20° E of Quezon City"
+        },
+        {
+            "date": "2025-10-28",
+            "time": "10:45:22",
+            "latitude": "15.5000",
+            "longitude": "119.9500",
+            "depth": "075 kilometers",
+            "magnitude": "5.8",
+            "location": "012 km W of Iba (Zambales)"
+        },
+        {
+            "date": "2025-10-28",
+            "time": "08:20:15",
+            "latitude": "14.5800",
+            "longitude": "120.9700",
+            "depth": "005 kilometers",
+            "magnitude": "2.8",
+            "location": "002 km S of Manila City"
+        },
+        {
+            "date": "2025-10-27",
+            "time": "22:10:05",
+            "latitude": "13.5000",
+            "longitude": "123.5000",
+            "depth": "150 kilometers",
+            "magnitude": "6.2",
+            "location": "050 km E of Legaspi (Albay)"
+        }
+    ]
+}

@@ -1,0 +1,144 @@
+================================================================================
+  TREMR - INSTALLATION GUIDE
+  Earthquake Early Warning System
+================================================================================
+
+QUICK INSTALL (RECOMMENDED)
+================================================================================
+
+1. Make sure Python 3.8 or higher is installed
+   Download from: https://www.python.org/downloads/
+
+   IMPORTANT: During Python installation, check "Add Python to PATH"
+
+2. Double-click "install.py" (or run: python install.py)
+
+3. Wait for installation to complete (2-5 minutes)
+
+4. Launch the app using:
+   - Desktop shortcut "Tremr"
+   - Or "Launch_The_Big_One_Listener.bat"
+   - Or Start Menu
+
+That's it! The app is now ready to protect you.
+
+
+MANUAL INSTALL (Alternative)
+================================================================================
+
+If the automatic installer doesn't work:
+
+1. Open Command Prompt in this folder
+
+2. Install dependencies:
+   pip install -r requirements.txt
+
+3. Run the app:
+   python gui.py
+
+
+SYSTEM REQUIREMENTS
+================================================================================
+
+- Windows 7 or higher
+- Python 3.8 or higher
+- Internet connection (to fetch PHIVOLCS data)
+- 100 MB free disk space
+
+
+FEATURES
+================================================================================
+
+✓ Real-time monitoring of PHIVOLCS earthquake data
+✓ Customizable alert radius and magnitude threshold
+✓ Desktop notifications with sound alerts
+✓ System tray operation (runs in background)
+✓ Auto-start on Windows boot (optional)
+✓ Single instance (prevents duplicate alerts)
+✓ Connection status indicator
+
+
+FIRST TIME SETUP
+================================================================================
+
+1. Launch the application
+
+2. Configure your location:
+   - Enter your address (e.g., "Quezon City, Philippines")
+   - Click "Search" to set coordinates
+
+3. Adjust alert settings:
+   - Alert Radius: Distance in km (default: 100km)
+   - Min Magnitude: Minimum earthquake magnitude (default: 3.0)
+   - Check Interval: How often to check PHIVOLCS (default: 60 seconds)
+
+4. Click "Start Monitoring"
+
+5. Minimize to tray to run in background
+
+
+TROUBLESHOOTING
+================================================================================
+
+Q: Installation fails with "pip not found"
+A: Python not added to PATH. Reinstall Python with "Add Python to PATH" checked.
+
+Q: "Tremr is already running"
+A: Only one instance can run. Check system tray for the earthquake icon.
+
+Q: PHIVOLCS Connection shows "Disconnected"
+A: Check your internet connection. The app needs internet to fetch earthquake data.
+
+Q: No notifications appearing
+A: Check Windows notification settings. Make sure notifications are enabled.
+
+Q: App crashes on startup
+A: Delete seen_earthquakes.json and restart the app.
+
+
+UNINSTALL
+================================================================================
+
+To remove the application:
+
+1. Close the app (right-click tray icon → Exit)
+2. Delete the application folder
+3. Remove shortcuts from Desktop and Start Menu (if created)
+4. (Optional) Remove auto-start:
+   - Open the app
+   - Uncheck "Start monitoring automatically when computer starts"
+
+
+SUPPORT
+================================================================================
+
+For issues or questions:
+- Check earthquake_monitor.log for error messages
+- Check system_test_report_*.json for system status
+- Run test_full_system.py to verify all features
+
+
+IMPORTANT SAFETY NOTES
+================================================================================
+
+⚠️  This app provides early warning based on PHIVOLCS data
+⚠️  Always follow official emergency procedures during earthquakes
+⚠️  The app monitors official PHIVOLCS data updated every minute
+⚠️  Keep the app running 24/7 for continuous protection
+⚠️  Ensure your computer has internet connection
+⚠️  Test notifications after installation to verify alerts work
+
+
+VERSION INFORMATION
+================================================================================
+
+Application: Tremr
+Purpose: Earthquake Early Warning System
+Data Source: PHIVOLCS (Philippine Institute of Volcanology and Seismology)
+Platform: Windows
+License: For personal safety use
+
+
+================================================================================
+  Stay Safe! Let this app watch over you 24/7.
+================================================================================

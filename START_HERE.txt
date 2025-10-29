@@ -1,0 +1,101 @@
+================================================================================
+                    TREMR
+         Your Personal Earthquake Early Warning System
+================================================================================
+
+QUICK START (3 Steps):
+
+  1. Double-click: setup.bat
+     (Installs everything - first time only)
+
+  2. Double-click: start_gui.bat
+     (Opens the easy-to-use GUI)
+
+  3. Enter your address and click "Start Monitoring"
+     (That's it!)
+
+
+WHAT YOU GET:
+
+  ✓ Real-time earthquake monitoring
+  ✓ Loud warning sound alerts
+  ✓ Bright visual notifications
+  ✓ Easy address search (no coordinates needed!)
+  ✓ Auto-start on computer boot
+  ✓ Minimalist, clean interface
+
+
+FEATURES:
+
+  🎯 Address Search
+     - Type "Makati, Philippines" or any address
+     - App finds coordinates automatically
+     - No need to know latitude/longitude!
+
+  🔊 Warning Alerts
+     - Triple beep sound (impossible to miss)
+     - Bright red warning icon
+     - Shows magnitude, location, distance
+
+  ⚙️ Easy Configuration
+     - Alert radius (how far to monitor)
+     - Minimum magnitude (earthquake strength)
+     - Check interval (how often)
+
+  🚀 Auto-Start
+     - Enable with one checkbox
+     - Starts monitoring when Windows starts
+     - Perfect for 24/7 protection
+
+
+FILES YOU NEED TO KNOW:
+
+  start_gui.bat       ← CLICK THIS to open GUI (easiest!)
+  setup.bat           ← Run once to install
+  run_test.bat        ← Test before using
+  GUI_GUIDE.md        ← Complete GUI documentation
+  OVERVIEW.md         ← Learn how everything works
+
+
+TESTING FIRST (Recommended):
+
+  1. Run: setup.bat
+  2. Run: run_test.bat
+  3. You should hear BEEP BEEP BEEP
+  4. You should see a red popup notification
+  5. If yes, everything works! Now run: start_gui.bat
+
+
+DOCUMENTATION:
+
+  Quick Start -----> QUICKSTART.md
+  GUI Guide -------> GUI_GUIDE.md
+  Full Docs -------> README.md
+  Overview --------> OVERVIEW.md
+  Testing Guide ---> TESTING.md
+
+
+SUPPORT:
+
+  - Check earthquake_monitor.log for activity
+  - Read the documentation files above
+  - All guides are in Markdown format (open with any text editor)
+
+
+SAFETY NOTE:
+
+  This is an INFORMATIONAL TOOL.
+  Always follow official PHIVOLCS and emergency services guidance.
+  Visit: https://www.phivolcs.dost.gov.ph/
+
+
+READY?
+
+  1. setup.bat
+  2. start_gui.bat
+  3. Done!
+
+
+================================================================================
+               Stay Safe! Stay Informed! Stay Prepared!
+================================================================================
