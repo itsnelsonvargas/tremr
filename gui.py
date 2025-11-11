@@ -21,7 +21,7 @@ class EarthquakeMonitorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Tremr")
-        self.root.geometry("500x750")
+        self.root.geometry("600x750")
         self.root.resizable(False, False)
 
         # Set icon if available
@@ -42,8 +42,8 @@ class EarthquakeMonitorGUI:
         try:
             if os.path.exists('tremr_logo.png'):
                 logo_pil = Image.open('tremr_logo.png')
-                # Resize logo to fit nicely in UI (150x150 pixels)
-                logo_pil = logo_pil.resize((150, 150), Image.Resampling.LANCZOS)
+                # Resize logo to fit nicely in UI (200x200 pixels for larger display)
+                logo_pil = logo_pil.resize((200, 200), Image.Resampling.LANCZOS)
                 self.logo_image = ImageTk.PhotoImage(logo_pil)
         except Exception as e:
             logging.error(f"Error loading logo: {e}")
@@ -190,52 +190,72 @@ class EarthquakeMonitorGUI:
 
         title_label = ttk.Label(
             main_frame,
-            text="Tremr",
-            font=("Segoe UI", 18, "bold")
+            text="🌋 Tremr",
+            font=("Segoe UI", 24, "bold"),
+            foreground="#FF4444"
         )
-        title_label.pack(pady=(0, 20))
+        title_label.pack(pady=(0, 5))
+
+        subtitle_label = ttk.Label(
+            main_frame,
+            text="Real-time Earthquake Monitoring System",
+            font=("Segoe UI", 12),
+            foreground="#666666"
+        )
+        subtitle_label.pack(pady=(0, 25))
 
         # Status Frame
-        status_frame = ttk.LabelFrame(main_frame, text="Status", padding="10")
-        status_frame.pack(fill=tk.X, pady=(0, 15))
+        status_frame = ttk.LabelFrame(main_frame, text="📊 Status", padding="15")
+        status_frame.pack(fill=tk.X, pady=(0, 20))
 
-        # Monitoring status
-        self.status_label = ttk.Label(
-            status_frame,
-            text="● Stopped",
-            font=("Segoe UI", 11),
-            foreground="red"
+        # Monitoring status with animated indicator
+        status_container = ttk.Frame(status_frame)
+        status_container.pack(fill=tk.X, pady=(0, 10))
+
+        self.status_indicator = ttk.Label(
+            status_container,
+            text="●",
+            font=("Segoe UI", 16, "bold"),
+            foreground="#FF4444"
         )
-        self.status_label.pack()
+        self.status_indicator.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.status_label = ttk.Label(
+            status_container,
+            text="Monitoring Stopped",
+            font=("Segoe UI", 14, "bold"),
+            foreground="#FF4444"
+        )
+        self.status_label.pack(side=tk.LEFT)
 
         # PHIVOLCS connection status
         connection_frame = ttk.Frame(status_frame)
-        connection_frame.pack(pady=(10, 0))
+        connection_frame.pack(fill=tk.X, pady=(10, 0))
 
         ttk.Label(
             connection_frame,
-            text="PHIVOLCS Connection:",
-            font=("Segoe UI", 9)
-        ).pack(side=tk.LEFT, padx=(0, 5))
+            text="🌐 PHIVOLCS Connection:",
+            font=("Segoe UI", 10)
+        ).pack(side=tk.LEFT, padx=(0, 8))
 
         self.connection_status_label = ttk.Label(
             connection_frame,
             text="● Checking...",
-            font=("Segoe UI", 9),
-            foreground="gray"
+            font=("Segoe UI", 10, "bold"),
+            foreground="#666666"
         )
         self.connection_status_label.pack(side=tk.LEFT)
 
         self.connection_detail_label = ttk.Label(
             status_frame,
             text="",
-            font=("Segoe UI", 8),
-            foreground="gray"
+            font=("Segoe UI", 9),
+            foreground="#666666"
         )
-        self.connection_detail_label.pack(pady=(2, 0))
+        self.connection_detail_label.pack(pady=(5, 0), anchor=tk.W)
 
         # Location Frame
-        location_frame = ttk.LabelFrame(main_frame, text="Monitoring Location", padding="10")
+        location_frame = ttk.LabelFrame(main_frame, text="📍 Monitoring Location", padding="10")
         location_frame.pack(fill=tk.X, pady=(0, 15))
 
         ttk.Label(location_frame, text="Address:", font=("Segoe UI", 9)).pack(anchor=tk.W)
@@ -270,7 +290,7 @@ class EarthquakeMonitorGUI:
         self.coords_label.pack(anchor=tk.W, pady=(5, 0))
 
         # Settings Frame
-        settings_frame = ttk.LabelFrame(main_frame, text="Alert Settings", padding="10")
+        settings_frame = ttk.LabelFrame(main_frame, text="⚙️ Alert Settings", padding="10")
         settings_frame.pack(fill=tk.X, pady=(0, 15))
 
         # Radius
@@ -321,7 +341,7 @@ class EarthquakeMonitorGUI:
         interval_spinbox.pack(side=tk.RIGHT)
 
         # Auto-start Frame
-        autostart_frame = ttk.LabelFrame(main_frame, text="System Settings", padding="10")
+        autostart_frame = ttk.LabelFrame(main_frame, text="🔧 System Settings", padding="10")
         autostart_frame.pack(fill=tk.X, pady=(0, 15))
 
         self.autostart_var = tk.BooleanVar(value=self.check_autostart())
@@ -365,7 +385,7 @@ class EarthquakeMonitorGUI:
         self.tray_btn.pack(fill=tk.X)
 
         # Log Frame
-        log_frame = ttk.LabelFrame(main_frame, text="Activity Log", padding="10")
+        log_frame = ttk.LabelFrame(main_frame, text="📝 Activity Log", padding="10")
         log_frame.pack(fill=tk.BOTH, expand=True)
 
         self.log_text = scrolledtext.ScrolledText(
@@ -526,14 +546,16 @@ class EarthquakeMonitorGUI:
     def update_status(self, monitoring=False):
         """Update status display"""
         if monitoring:
+            self.status_indicator.configure(foreground="#00AA00")  # Green
             self.status_label.configure(
-                text="● Monitoring Active",
-                foreground="green"
+                text="Monitoring Active",
+                foreground="#00AA00"
             )
         else:
+            self.status_indicator.configure(foreground="#FF4444")  # Red
             self.status_label.configure(
-                text="● Stopped",
-                foreground="red"
+                text="Monitoring Stopped",
+                foreground="#FF4444"
             )
 
     def check_phivolcs_connection(self):
