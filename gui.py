@@ -13,7 +13,7 @@ import winreg
 from geopy.geocoders import Nominatim
 from main import EarthquakeMonitor
 import logging
-from PIL import Image
+from PIL import Image, ImageTk
 import pystray
 import tempfile
 
@@ -36,6 +36,17 @@ class EarthquakeMonitorGUI:
                 self.root.iconphoto(True, icon)
         except:
             pass
+
+        # Load logo for display
+        self.logo_image = None
+        try:
+            if os.path.exists('tremr_logo.png'):
+                logo_pil = Image.open('tremr_logo.png')
+                # Resize logo to fit nicely in UI (150x150 pixels)
+                logo_pil = logo_pil.resize((150, 150), Image.Resampling.LANCZOS)
+                self.logo_image = ImageTk.PhotoImage(logo_pil)
+        except Exception as e:
+            logging.error(f"Error loading logo: {e}")
 
         # Variables
         self.monitor = None
@@ -172,10 +183,14 @@ class EarthquakeMonitorGUI:
         main_frame = ttk.Frame(self.root, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Title
+        # Logo and Title
+        if self.logo_image:
+            logo_label = ttk.Label(main_frame, image=self.logo_image)
+            logo_label.pack(pady=(0, 10))
+
         title_label = ttk.Label(
             main_frame,
-            text="🌋 Tremr",
+            text="Tremr",
             font=("Segoe UI", 18, "bold")
         )
         title_label.pack(pady=(0, 20))

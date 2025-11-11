@@ -1,4 +1,7 @@
-# Tremr
+<div align="center">
+  <img src="tremr_logo.png" alt="Tremr Logo" width="200"/>
+  <h1>Tremr</h1>
+</div>
 
 A Python application that monitors PHIVOLCS (Philippine Institute of Volcanology and Seismology) earthquake data in real-time and sends desktop notifications when nearby earthquakes occur.
 
