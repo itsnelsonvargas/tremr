@@ -6,3 +6,4 @@ pydub>=0.25.1
 pystray>=0.19.0
 beautifulsoup4>=4.12.0
 psutil>=5.9.0
+tkintermapview>=1.29

@@ -16,13 +16,24 @@ import logging
 from PIL import Image, ImageTk
 import pystray
 import tempfile
+import tkintermapview
 
 class EarthquakeMonitorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Tremr")
-        self.root.geometry("600x750")
+        self.root.geometry("450x750")  # 50% width (450) x increased height for vertical layout
         self.root.resizable(False, False)
+
+        # Dark theme colors
+        self.bg_color = "#0a0a0a"
+        self.card_bg = "#1a1a1a"
+        self.text_color = "#ffffff"
+        self.text_secondary = "#aaaaaa"
+        self.accent_color = "#00d4ff"
+
+        # Set dark background
+        self.root.configure(bg=self.bg_color)
 
         # Set icon if available
         self.icon_path = None
@@ -65,6 +76,10 @@ class EarthquakeMonitorGUI:
 
         # Initialize geocoder
         self.geolocator = Nominatim(user_agent="tremr")
+
+        # Map variables
+        self.map_widget = None
+        self.location_marker = None
 
         # Setup GUI
         self.setup_ui()
@@ -178,248 +193,417 @@ class EarthquakeMonitorGUI:
         self.root.destroy()
 
     def setup_ui(self):
-        """Setup the user interface"""
-        # Main container with padding
-        main_frame = ttk.Frame(self.root, padding="20")
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        """Setup the user interface - 100% matching the reference image"""
+        # Create canvas for starfield background
+        self.canvas = tk.Canvas(self.root, bg=self.bg_color, highlightthickness=0)
+        self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Logo and Title
+        # Add stars to background
+        self.create_starfield()
+
+        # Main container with dark background (minimal padding for narrow view)
+        main_frame = tk.Frame(self.root, bg=self.bg_color, padx=12, pady=8)
+        main_frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # Logo and Title (smaller logo for narrow view)
         if self.logo_image:
-            logo_label = ttk.Label(main_frame, image=self.logo_image)
-            logo_label.pack(pady=(0, 10))
+            # Create smaller logo for narrow window
+            from PIL import Image, ImageTk
+            logo_pil = Image.open('tremr_logo.png')
+            logo_pil = logo_pil.resize((80, 80), Image.Resampling.LANCZOS)  # Further reduced for narrow view
+            self.logo_image_small = ImageTk.PhotoImage(logo_pil)
+            logo_label = tk.Label(main_frame, image=self.logo_image_small, bg=self.bg_color)
+            logo_label.pack(pady=(3, 5))
 
-        title_label = ttk.Label(
+        title_label = tk.Label(
             main_frame,
-            text="🌋 Tremr",
-            font=("Segoe UI", 24, "bold"),
-            foreground="#FF4444"
+            text="🔔 Tremr",
+            font=("Segoe UI", 18, "bold"),  # Further reduced for narrow view
+            foreground=self.text_color,
+            bg=self.bg_color
         )
-        title_label.pack(pady=(0, 5))
+        title_label.pack(pady=(0, 2))
 
-        subtitle_label = ttk.Label(
+        subtitle_label = tk.Label(
             main_frame,
             text="Real-time Earthquake Monitoring System",
-            font=("Segoe UI", 12),
-            foreground="#666666"
+            font=("Segoe UI", 9),  # Further reduced
+            foreground=self.text_secondary,
+            bg=self.bg_color
         )
-        subtitle_label.pack(pady=(0, 25))
+        subtitle_label.pack(pady=(0, 8))
 
-        # Status Frame
-        status_frame = ttk.LabelFrame(main_frame, text="📊 Status", padding="15")
-        status_frame.pack(fill=tk.X, pady=(0, 20))
+        # Status Section Header
+        status_header = tk.Label(
+            main_frame,
+            text="📊 Status",
+            font=("Segoe UI", 8, "bold"),
+            foreground=self.text_secondary,
+            bg=self.bg_color
+        )
+        status_header.pack(anchor=tk.W, pady=(0, 4))
 
-        # Monitoring status with animated indicator
-        status_container = ttk.Frame(status_frame)
-        status_container.pack(fill=tk.X, pady=(0, 10))
+        # Status Card (vertical layout for narrow window)
+        status_card = tk.Frame(main_frame, bg=self.card_bg, highlightbackground="#2a5a7a", highlightthickness=1)
+        status_card.pack(fill=tk.X, pady=(0, 6))
 
-        self.status_indicator = ttk.Label(
-            status_container,
+        status_inner = tk.Frame(status_card, bg=self.card_bg, padx=10, pady=8)
+        status_inner.pack(fill=tk.X)
+
+        # Monitoring Status
+        status_row = tk.Frame(status_inner, bg=self.card_bg)
+        status_row.pack(anchor=tk.W, pady=(0, 6))
+
+        self.status_indicator = tk.Label(
+            status_row,
             text="●",
-            font=("Segoe UI", 16, "bold"),
-            foreground="#FF4444"
-        )
-        self.status_indicator.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.status_label = ttk.Label(
-            status_container,
-            text="Monitoring Stopped",
             font=("Segoe UI", 14, "bold"),
-            foreground="#FF4444"
+            foreground="#FF4444",
+            bg=self.card_bg
+        )
+        self.status_indicator.pack(side=tk.LEFT, padx=(0, 6))
+
+        self.status_label = tk.Label(
+            status_row,
+            text="Monitoring Stopped",
+            font=("Segoe UI", 11, "bold"),
+            foreground="#FF4444",
+            bg=self.card_bg
         )
         self.status_label.pack(side=tk.LEFT)
 
-        # PHIVOLCS connection status
-        connection_frame = ttk.Frame(status_frame)
-        connection_frame.pack(fill=tk.X, pady=(10, 0))
+        # PHIVOLCS Connection
+        conn_header_row = tk.Frame(status_inner, bg=self.card_bg)
+        conn_header_row.pack(anchor=tk.W, pady=(0, 3))
 
-        ttk.Label(
-            connection_frame,
-            text="🌐 PHIVOLCS Connection:",
-            font=("Segoe UI", 10)
-        ).pack(side=tk.LEFT, padx=(0, 8))
+        tk.Label(
+            conn_header_row,
+            text="🌐 PHIVOLCS:",
+            font=("Segoe UI", 8),
+            foreground=self.text_secondary,
+            bg=self.card_bg
+        ).pack(side=tk.LEFT)
 
-        self.connection_status_label = ttk.Label(
-            connection_frame,
-            text="● Checking...",
-            font=("Segoe UI", 10, "bold"),
-            foreground="#666666"
+        self.connection_status_label = tk.Label(
+            conn_header_row,
+            text=" ● Connected",
+            font=("Segoe UI", 8, "bold"),
+            foreground="#4CAF50",
+            bg=self.card_bg
         )
         self.connection_status_label.pack(side=tk.LEFT)
 
-        self.connection_detail_label = ttk.Label(
-            status_frame,
-            text="",
-            font=("Segoe UI", 9),
-            foreground="#666666"
+        # Connection detail text
+        self.connection_detail_label = tk.Label(
+            status_inner,
+            text="API responding normally",
+            font=("Segoe UI", 7),
+            foreground="#4CAF50",
+            bg=self.card_bg
         )
-        self.connection_detail_label.pack(pady=(5, 0), anchor=tk.W)
+        self.connection_detail_label.pack(anchor=tk.W)
 
-        # Location Frame
-        location_frame = ttk.LabelFrame(main_frame, text="📍 Monitoring Location", padding="10")
-        location_frame.pack(fill=tk.X, pady=(0, 15))
+        # Map widget (full width for narrow window)
+        try:
+            self.map_widget = tkintermapview.TkinterMapView(
+                main_frame,
+                width=426,  # Full width minus padding (450 - 24 = 426)
+                height=140,  # Adjusted height for better visibility
+                corner_radius=3
+            )
+            self.map_widget.pack(pady=(0, 8))
 
-        ttk.Label(location_frame, text="Address:", font=("Segoe UI", 9)).pack(anchor=tk.W)
+            # Set initial position to user's location
+            lat = self.config.get('latitude', 14.6994)
+            lon = self.config.get('longitude', 121.0824)
 
-        # Address input
-        address_input_frame = ttk.Frame(location_frame)
-        address_input_frame.pack(fill=tk.X, pady=(5, 5))
+            # Set position and zoom to show Philippines
+            self.map_widget.set_position(lat, lon)
+            self.map_widget.set_zoom(6)
 
-        self.address_var = tk.StringVar(value=self.config.get('address', 'Manila, Philippines'))
-        self.address_entry = ttk.Entry(
-            address_input_frame,
+            # Add red circle marker
+            self.location_marker = self.map_widget.set_marker(
+                lat,
+                lon,
+                text="",
+                marker_color_circle="red",
+                marker_color_outside="darkred"
+            )
+        except Exception as e:
+            logging.error(f"Error creating map widget: {e}")
+
+        # Monitoring Location Section
+        location_header = tk.Label(
+            main_frame,
+            text="📍 Monitoring Location",
+            font=("Segoe UI", 8, "bold"),
+            foreground=self.text_secondary,
+            bg=self.bg_color
+        )
+        location_header.pack(anchor=tk.W, pady=(0, 5))
+
+        location_card = tk.Frame(main_frame, bg=self.card_bg, highlightbackground="#2a5a7a", highlightthickness=1)
+        location_card.pack(fill=tk.X, pady=(0, 8))
+
+        location_inner = tk.Frame(location_card, bg=self.card_bg, padx=10, pady=8)
+        location_inner.pack(fill=tk.X)
+
+        # Address label
+        tk.Label(
+            location_inner,
+            text="Address:",
+            font=("Segoe UI", 8),
+            foreground=self.text_secondary,
+            bg=self.card_bg
+        ).pack(anchor=tk.W, pady=(0, 4))
+
+        # Address input and search button
+        address_row = tk.Frame(location_inner, bg=self.card_bg)
+        address_row.pack(fill=tk.X, pady=(0, 5))
+
+        self.address_var = tk.StringVar(value=self.config.get('address', 'commonwealth, Quezon city'))
+        self.address_entry = tk.Entry(
+            address_row,
             textvariable=self.address_var,
-            font=("Segoe UI", 10)
+            font=("Segoe UI", 8),
+            bg="#0d0d0d",
+            fg=self.text_color,
+            insertbackground=self.text_color,
+            relief=tk.FLAT,
+            highlightthickness=0,
+            bd=0
         )
-        self.address_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        self.address_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), ipady=3)
 
-        self.search_btn = ttk.Button(
-            address_input_frame,
+        self.search_btn = tk.Button(
+            address_row,
             text="Search",
             command=self.search_address,
-            width=10
+            font=("Segoe UI", 8),
+            bg="#1a1a1a",
+            fg=self.text_color,
+            relief=tk.FLAT,
+            cursor="hand2",
+            padx=12,
+            pady=3,
+            highlightthickness=1,
+            highlightbackground="#3a3a3a",
+            activebackground="#2a2a2a",
+            bd=0
         )
         self.search_btn.pack(side=tk.RIGHT)
 
         # Coordinates display
-        self.coords_label = ttk.Label(
-            location_frame,
+        self.coords_label = tk.Label(
+            location_inner,
             text=f"Coordinates: {self.config['latitude']:.4f}, {self.config['longitude']:.4f}",
+            font=("Segoe UI", 7),
+            foreground="#666666",
+            bg=self.card_bg
+        )
+        self.coords_label.pack(anchor=tk.W)
+
+        # Alert Settings Section
+        settings_header = tk.Label(
+            main_frame,
+            text="⚙️ Alert Settings",
+            font=("Segoe UI", 8, "bold"),
+            foreground=self.text_secondary,
+            bg=self.bg_color
+        )
+        settings_header.pack(anchor=tk.W, pady=(0, 5))
+
+        settings_card = tk.Frame(main_frame, bg=self.card_bg, highlightbackground="#2a5a7a", highlightthickness=1)
+        settings_card.pack(fill=tk.X, pady=(0, 10))
+
+        settings_inner = tk.Frame(settings_card, bg=self.card_bg, padx=10, pady=8)
+        settings_inner.pack(fill=tk.X)
+
+        # Alert Radius header with value
+        radius_header = tk.Frame(settings_inner, bg=self.card_bg)
+        radius_header.pack(fill=tk.X, pady=(0, 4))
+
+        tk.Label(
+            radius_header,
+            text="Alert Radius (km):",
             font=("Segoe UI", 8),
-            foreground="gray"
+            foreground=self.text_secondary,
+            bg=self.card_bg
+        ).pack(side=tk.LEFT)
+
+        # Value and spinbox controls
+        radius_controls = tk.Frame(radius_header, bg=self.card_bg)
+        radius_controls.pack(side=tk.RIGHT)
+
+        # Up/down buttons
+        btn_frame = tk.Frame(radius_controls, bg=self.card_bg)
+        btn_frame.pack(side=tk.RIGHT, padx=(5, 0))
+
+        up_btn = tk.Button(
+            btn_frame,
+            text="▲",
+            font=("Arial", 5),
+            bg="#1a1a1a",
+            fg="#888888",
+            relief=tk.FLAT,
+            cursor="hand2",
+            width=2,
+            command=lambda: self.adjust_radius(50),
+            bd=0
         )
-        self.coords_label.pack(anchor=tk.W, pady=(5, 0))
+        up_btn.pack()
 
-        # Settings Frame
-        settings_frame = ttk.LabelFrame(main_frame, text="⚙️ Alert Settings", padding="10")
-        settings_frame.pack(fill=tk.X, pady=(0, 15))
-
-        # Radius
-        radius_frame = ttk.Frame(settings_frame)
-        radius_frame.pack(fill=tk.X, pady=(0, 10))
-
-        ttk.Label(radius_frame, text="Alert Radius (km):", width=20).pack(side=tk.LEFT)
-        self.radius_var = tk.StringVar(value=str(self.config['radius_km']))
-        radius_spinbox = ttk.Spinbox(
-            radius_frame,
-            from_=10,
-            to=500,
-            textvariable=self.radius_var,
-            width=15
+        down_btn = tk.Button(
+            btn_frame,
+            text="▼",
+            font=("Arial", 5),
+            bg="#1a1a1a",
+            fg="#888888",
+            relief=tk.FLAT,
+            cursor="hand2",
+            width=2,
+            command=lambda: self.adjust_radius(-50),
+            bd=0
         )
-        radius_spinbox.pack(side=tk.RIGHT)
+        down_btn.pack()
 
-        # Magnitude
-        magnitude_frame = ttk.Frame(settings_frame)
-        magnitude_frame.pack(fill=tk.X, pady=(0, 10))
+        # Ensure radius is within new bounds (50-12000)
+        initial_radius = max(50, min(12000, self.config.get('radius_km', 100)))
 
-        ttk.Label(magnitude_frame, text="Min Magnitude:", width=20).pack(side=tk.LEFT)
-        self.magnitude_var = tk.StringVar(value=str(self.config['min_magnitude']))
-        magnitude_spinbox = ttk.Spinbox(
-            magnitude_frame,
-            from_=1.0,
-            to=10.0,
-            increment=0.1,
-            textvariable=self.magnitude_var,
-            width=15
+        # Value display in circle (smaller for narrow view)
+        value_display = tk.Frame(radius_controls, bg=self.card_bg)
+        value_display.pack(side=tk.RIGHT, padx=(0, 2))
+
+        circle_canvas = tk.Canvas(value_display, width=35, height=35, bg=self.card_bg, highlightthickness=0)
+        circle_canvas.pack()
+        circle_canvas.create_oval(2, 2, 33, 33, outline=self.accent_color, width=2)
+
+        self.radius_value_label = tk.Label(
+            value_display,
+            text=f"{int(initial_radius)}",
+            font=("Segoe UI", 8, "bold"),
+            foreground=self.text_color,
+            bg=self.card_bg
         )
-        magnitude_spinbox.pack(side=tk.RIGHT)
+        self.radius_value_label.place(x=17, y=17, anchor="center")
 
-        # Check interval
-        interval_frame = ttk.Frame(settings_frame)
-        interval_frame.pack(fill=tk.X)
+        # Aesthetic cyan slider (30% width)
+        slider_container = tk.Frame(settings_inner, bg=self.card_bg)
+        slider_container.pack(fill=tk.X, pady=(3, 0))
 
-        ttk.Label(interval_frame, text="Check Interval (sec):", width=20).pack(side=tk.LEFT)
-        self.interval_var = tk.StringVar(value=str(self.config['check_interval_seconds']))
-        interval_spinbox = ttk.Spinbox(
-            interval_frame,
-            from_=30,
-            to=300,
-            increment=10,
-            textvariable=self.interval_var,
-            width=15
+        self.radius_var = tk.DoubleVar(value=initial_radius)
+        radius_slider = tk.Scale(
+            slider_container,
+            from_=50,
+            to=12000,
+            resolution=10,  # Increment by 10km for smoother scrolling
+            orient=tk.HORIZONTAL,
+            variable=self.radius_var,
+            showvalue=0,
+            bg=self.card_bg,
+            fg="#00d4ff",  # Cyan slider handle
+            troughcolor="#0a2a3a",  # Dark cyan trough
+            highlightthickness=1,
+            highlightbackground="#00d4ff",  # Cyan border
+            highlightcolor="#00d4ff",
+            relief=tk.FLAT,
+            activebackground="#00ffff",  # Bright cyan when active
+            sliderrelief=tk.RAISED,
+            sliderlength=20,  # Longer handle for better grip
+            width=8,  # Thicker slider bar
+            bd=0,
+            length= 420, 
+            command=self.update_radius_label
         )
-        interval_spinbox.pack(side=tk.RIGHT)
+        radius_slider.pack(side=tk.LEFT, pady=(0, 3))
 
-        # Auto-start Frame
-        autostart_frame = ttk.LabelFrame(main_frame, text="🔧 System Settings", padding="10")
-        autostart_frame.pack(fill=tk.X, pady=(0, 15))
+        # Hidden settings for compatibility
+        self.magnitude_var = tk.DoubleVar(value=self.config.get('min_magnitude', 3.0))
+        self.interval_var = tk.IntVar(value=self.config.get('check_interval_seconds', 60))
 
-        self.autostart_var = tk.BooleanVar(value=self.check_autostart())
-        autostart_check = ttk.Checkbutton(
-            autostart_frame,
-            text="Start monitoring automatically when computer starts",
-            variable=self.autostart_var,
-            command=self.toggle_autostart
-        )
-        autostart_check.pack(anchor=tk.W)
-
-        # Control Buttons Frame
-        buttons_frame = ttk.Frame(main_frame)
-        buttons_frame.pack(fill=tk.X, pady=(0, 15))
-
-        self.start_btn = ttk.Button(
-            buttons_frame,
-            text="▶ Start Monitoring",
-            command=self.start_monitoring,
-            style="Accent.TButton"
-        )
-        self.start_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-
-        self.stop_btn = ttk.Button(
-            buttons_frame,
-            text="■ Stop Monitoring",
-            command=self.stop_monitoring,
-            state=tk.DISABLED
-        )
-        self.stop_btn.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(5, 0))
-
-        # Minimize to Tray Button
-        tray_frame = ttk.Frame(main_frame)
-        tray_frame.pack(fill=tk.X, pady=(0, 15))
-
-        self.tray_btn = ttk.Button(
-            tray_frame,
-            text="↓ Minimize to Tray (Run in Background)",
-            command=self.hide_window
-        )
-        self.tray_btn.pack(fill=tk.X)
-
-        # Log Frame
-        log_frame = ttk.LabelFrame(main_frame, text="📝 Activity Log", padding="10")
-        log_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.log_text = scrolledtext.ScrolledText(
-            log_frame,
-            height=8,
-            font=("Consolas", 8),
-            state=tk.DISABLED
-        )
-        self.log_text.pack(fill=tk.BOTH, expand=True)
+        # Add sparkle decoration in bottom right
+        self.add_sparkle_decoration()
 
         # Load initial logs
         self.load_recent_logs()
 
+    def create_starfield(self):
+        """Create animated starfield background"""
+        import random
+        self.stars = []
+        for _ in range(50):  # Increased stars for taller window
+            x = random.randint(0, 450)  # Adjusted for 50% width
+            y = random.randint(0, 750)  # Adjusted for taller height
+            size = random.choice([1, 1, 1, 2, 2, 3])
+            brightness = random.choice(['#444444', '#666666', '#888888', '#999999', '#aaaaaa'])
+            star = self.canvas.create_oval(x, y, x+size, y+size, fill=brightness, outline='')
+            self.stars.append((star, x, y))
+
+    def add_sparkle_decoration(self):
+        """Add sparkle/diamond decoration in bottom right corner"""
+        # Position in bottom right area (adjusted for 50% width and taller height)
+        sparkle_x = 410  # Adjusted for 450px width (450 - 40 = 410)
+        sparkle_y = 710  # Adjusted for 750px height (750 - 40 = 710)
+
+        # Create sparkle/star shape
+        # Main diamond shape
+        self.canvas.create_polygon(
+            sparkle_x, sparkle_y - 30,      # top
+            sparkle_x + 8, sparkle_y - 10,  # top right
+            sparkle_x + 30, sparkle_y,      # right
+            sparkle_x + 8, sparkle_y + 10,  # bottom right
+            sparkle_x, sparkle_y + 30,      # bottom
+            sparkle_x - 8, sparkle_y + 10,  # bottom left
+            sparkle_x - 30, sparkle_y,      # left
+            sparkle_x - 8, sparkle_y - 10,  # top left
+            fill='#cccccc',
+            outline='#ffffff',
+            width=2
+        )
+
+        # Add smaller sparkles around it
+        sparkles = [
+            (sparkle_x - 50, sparkle_y - 40, 8),
+            (sparkle_x + 45, sparkle_y - 35, 6),
+            (sparkle_x + 50, sparkle_y + 30, 5),
+        ]
+
+        for sx, sy, ssize in sparkles:
+            self.canvas.create_polygon(
+                sx, sy - ssize,
+                sx + ssize//2, sy,
+                sx, sy + ssize,
+                sx - ssize//2, sy,
+                fill='#999999',
+                outline='#aaaaaa',
+                width=1
+            )
+
+    def adjust_radius(self, amount):
+        """Adjust radius by amount"""
+        current = self.radius_var.get()
+        new_value = max(50, min(12000, current + amount))
+        self.radius_var.set(new_value)
+        self.update_radius_label(new_value)
+
+    def update_radius_label(self, value):
+        """Update the radius value label when slider changes"""
+        # Format value based on size for better display
+        val = float(value)
+        if val >= 1000:
+            # Show as integer for large values (e.g., "1200" instead of "1200.0")
+            self.radius_value_label.configure(text=f"{int(val)}")
+        else:
+            # Show one decimal for smaller values
+            self.radius_value_label.configure(text=f"{val:.0f}")
+
     def log(self, message):
-        """Add message to log display"""
-        self.log_text.configure(state=tk.NORMAL)
-        self.log_text.insert(tk.END, f"{message}\n")
-        self.log_text.see(tk.END)
-        self.log_text.configure(state=tk.DISABLED)
+        """Add message to log display - now just logs to file"""
+        logging.info(message)
 
     def load_recent_logs(self):
-        """Load recent logs from file"""
-        if os.path.exists('earthquake_monitor.log'):
-            try:
-                with open('earthquake_monitor.log', 'r') as f:
-                    lines = f.readlines()
-                    recent = lines[-20:] if len(lines) > 20 else lines
-                    for line in recent:
-                        self.log_text.configure(state=tk.NORMAL)
-                        self.log_text.insert(tk.END, line)
-                        self.log_text.configure(state=tk.DISABLED)
-                    self.log_text.see(tk.END)
-            except:
-                pass
+        """Load recent logs from file - disabled in new design"""
+        pass
 
     def search_address(self):
         """Search for address and get coordinates"""
@@ -447,6 +631,28 @@ class EarthquakeMonitorGUI:
                 )
                 self.log(f"[+] Found: {location.address}")
                 self.log(f"  Coordinates: {location.latitude:.4f}, {location.longitude:.4f}")
+
+                # Update map marker if map widget exists
+                if self.map_widget:
+                    try:
+                        # Remove old marker if it exists
+                        if self.location_marker:
+                            self.location_marker.delete()
+
+                        # Set new position on map
+                        self.map_widget.set_position(location.latitude, location.longitude)
+                        self.map_widget.set_zoom(6)
+
+                        # Add new marker
+                        self.location_marker = self.map_widget.set_marker(
+                            location.latitude,
+                            location.longitude,
+                            text="",
+                            marker_color_circle="red",
+                            marker_color_outside="darkred"
+                        )
+                    except Exception as e:
+                        logging.error(f"Error updating map: {e}")
 
                 messagebox.showinfo(
                     "Location Found",
@@ -498,8 +704,6 @@ class EarthquakeMonitorGUI:
         self.monitor_thread.start()
 
         # Update UI
-        self.start_btn.configure(state=tk.DISABLED)
-        self.stop_btn.configure(state=tk.NORMAL)
         self.address_entry.configure(state=tk.DISABLED)
         self.search_btn.configure(state=tk.DISABLED)
         self.update_status(monitoring=True)
@@ -536,8 +740,6 @@ class EarthquakeMonitorGUI:
         self.monitor_thread = None
 
         # Update UI
-        self.start_btn.configure(state=tk.NORMAL)
-        self.stop_btn.configure(state=tk.DISABLED)
         self.address_entry.configure(state=tk.NORMAL)
         self.search_btn.configure(state=tk.NORMAL)
         self.update_status(monitoring=False)
@@ -546,16 +748,16 @@ class EarthquakeMonitorGUI:
     def update_status(self, monitoring=False):
         """Update status display"""
         if monitoring:
-            self.status_indicator.configure(foreground="#00AA00")  # Green
+            self.status_indicator.configure(foreground="#4CAF50")  # Green
             self.status_label.configure(
                 text="Monitoring Active",
-                foreground="#00AA00"
+                foreground="#4CAF50"
             )
         else:
-            self.status_indicator.configure(foreground="#FF4444")  # Red
+            self.status_indicator.configure(foreground="#FF5555")  # Red
             self.status_label.configure(
                 text="Monitoring Stopped",
-                foreground="#FF4444"
+                foreground="#FF5555"
             )
 
     def check_phivolcs_connection(self):
@@ -583,21 +785,21 @@ class EarthquakeMonitorGUI:
         """Update connection status display"""
         if is_connected:
             self.connection_status_label.configure(
-                text="● Connected",
-                foreground="green"
+                text=" ● Connected",
+                foreground="#4CAF50"
             )
             self.connection_detail_label.configure(
                 text="PHIVOLCS API is responding normally",
-                foreground="green"
+                foreground="#4CAF50"
             )
         else:
             self.connection_status_label.configure(
-                text="● Disconnected",
-                foreground="red"
+                text=" ● Disconnected",
+                foreground="#FF4444"
             )
             self.connection_detail_label.configure(
                 text=f"Issue: {message}",
-                foreground="red"
+                foreground="#FF4444"
             )
 
         # Log status change
